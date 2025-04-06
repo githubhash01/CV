@@ -1,4 +1,7 @@
+.idea/
+
 Dataset/
+augmented_data/
 src/cached_dataset/
 src/inference_results/
 
