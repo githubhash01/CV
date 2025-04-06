@@ -11,13 +11,12 @@ import torch
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # get the parent directory of the current file
 FILE_PATH = os.path.dirname(os.path.abspath(__file__))
-PARENT_PATH = os.path.dirname(FILE_PATH)
-DATASET_PATH = os.path.join(PARENT_PATH, "Dataset")
-CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cached_dataset")
+DATASET_PATH = os.path.join(os.path.dirname(FILE_PATH), "Dataset")
+CACHE_PATH = os.path.join(FILE_PATH, "cached_dataset")
 TEST_PATH = os.path.join(DATASET_PATH, "Test")
 TRAIN_PATH = os.path.join(DATASET_PATH, "TrainVal")
-WEIGHTS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "weights")
-INFERENCE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inference_results")
+WEIGHTS_PATH = os.path.join(FILE_PATH, "weights")
+INFERENCE_PATH = os.path.join(FILE_PATH, "inference_results")
 
 """
 Loading and caching datasets from the original dataset directory
