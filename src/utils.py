@@ -38,7 +38,8 @@ def build_dataset(dataset_path: str) -> List[Tuple[np.ndarray, np.ndarray]]:
 
         # load the image and mask as PIL images
         image = Image.open(os.path.join(image_path, filename)).convert('RGB')
-        mask = Image.open(os.path.join(mask_path, mask_filename)).convert('RGB')
+        #mask = Image.open(os.path.join(mask_path, mask_filename)).convert('RGB')
+        mask = Image.open(os.path.join(mask_path, mask_filename))
 
         # convert the image and mask to numpy arrays and append to the dataset
         dataset.append((np.array(image), np.array(mask)))
@@ -59,12 +60,12 @@ def cache_datasets() -> None:
 
     # Build the datasets for training and testing
     training_set = build_dataset(TRAIN_PATH)
-    aug_training_set = build_dataset(AUG_DATASET_PATH)
+    #aug_training_set = build_dataset(AUG_DATASET_PATH)
     testing_set = build_dataset(TEST_PATH)
 
     # Cache the datasets
     cache_dataset(training_set, "training_set.pkl")
-    cache_dataset(aug_training_set, "aug_training_set.pkl")
+    #cache_dataset(aug_training_set, "aug_training_set.pkl")
     cache_dataset(testing_set, "test_set.pkl")
 
 # Loads the dataset from a .npy file in the cache directory
@@ -281,3 +282,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    # get a random image and mask from the training set
+    training_set = get_cached_dataset("training_set.pkl")
+    random_index = np.random.randint(0, len(training_set))
+    image, mask = training_set[random_index]
+
+    print(np.unique(mask)) # print the unique values in the mask
+    display_img(mask)

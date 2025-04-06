@@ -77,6 +77,6 @@ def train_clip_autoencoder_segmentation():
     pass
 
 if __name__ == "__main__":
-    train_autoencoder()
-    #train_unet()
+    #train_autoencoder()
+    train_unet()
     #train_autoencoder_segmentation()
