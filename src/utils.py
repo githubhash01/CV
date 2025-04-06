@@ -1,5 +1,6 @@
 from typing import Tuple, List
 from typing import Sequence
+from sklearn.model_selection import train_test_split
 import os
 import numpy as np
 from PIL import Image, ImageDraw
@@ -33,12 +34,12 @@ def build_dataset(dataset_path: str) -> List[Tuple[np.ndarray, np.ndarray]]:
 
     for filename in os.listdir(image_path):
         # find the mask with the same name
+        # find the mask with the same name
         mask_filename = filename.replace("color", "label")
         mask_filename = mask_filename.replace(".jpg", ".png")
 
         # load the image and mask as PIL images
         image = Image.open(os.path.join(image_path, filename)).convert('RGB')
-        #mask = Image.open(os.path.join(mask_path, mask_filename)).convert('RGB')
         mask = Image.open(os.path.join(mask_path, mask_filename))
 
         # convert the image and mask to numpy arrays and append to the dataset
@@ -59,14 +60,28 @@ def cache_datasets() -> None:
         print(f"Dataset cached to {filepath}")
 
     # Build the datasets for training and testing
-    training_set = build_dataset(TRAIN_PATH)
-    #aug_training_set = build_dataset(AUG_DATASET_PATH)
+    trainval_set = build_dataset(TRAIN_PATH)
     testing_set = build_dataset(TEST_PATH)
 
+    # Split the training_set into training and validation sets
+    train_set, val_set = train_test_split(trainval_set, test_size=0.1, random_state=1)
+
     # Cache the datasets
-    cache_dataset(training_set, "training_set.pkl")
-    #cache_dataset(aug_training_set, "aug_training_set.pkl")
+    cache_dataset(train_set, "training_set.pkl")
+    cache_dataset(val_set, "validation_set.pkl")
+
+    aug_trainval_set = build_dataset(AUG_DATASET_PATH)
+
+    # Split the augmented training_set into training and validation sets
+    aug_training_set, aug_validation_set = train_test_split(aug_trainval_set, test_size=0.1, random_state=1)
+
+    # Cache the datasets
+    cache_dataset(aug_training_set, "aug_training_set.pkl")
+    cache_dataset(aug_validation_set, "aug_validation_set.pkl")
+
+    # Cache the testing set
     cache_dataset(testing_set, "test_set.pkl")
+
 
 # Loads the dataset from a .npy file in the cache directory
 def get_cached_dataset(filename) -> List[Tuple[np.ndarray, np.ndarray]]:
@@ -116,36 +131,23 @@ class SegmentationDataset(Dataset):
 
         return image, mask
 
-# returns a custom dataset built from training data
+# returns the dataloader specifically for training
 def get_training_dataloader():
-    """
-    Returns a DataLoader for the training dataset.
-    """
-
-    # returns a custom dataset for training
-    def load_training_set() -> List[Tuple[np.ndarray, np.ndarray]]:
-        # returns a custom dataset
-        dataset = get_cached_dataset("training_set.pkl")
-        return dataset
-
-    training_set = load_training_set()
+    training_set = get_cached_dataset("training_set.pkl")
     custom_dataset = SegmentationDataset(training_set[0:100])
     dataloader = torch.utils.data.DataLoader(custom_dataset, batch_size=8, shuffle=True)
     return dataloader
 
+# returns the dataloader specifically for evaluating
+def get_validation_dataloader():
+    eval_set = get_cached_dataset("validation_set.pkl")
+    custom_dataset = SegmentationDataset(eval_set)
+    dataloader = torch.utils.data.DataLoader(custom_dataset, batch_size=8, shuffle=False)
+    return dataloader
+
 # returns a custom dataset built from testing data
 def get_testing_dataloader():
-    """
-    Returns a DataLoader for the testing dataset.
-    """
-
-    # returns a custom dataset for testing
-    def load_test_set() -> List[Tuple[np.ndarray, np.ndarray]]:
-        # returns a custom dataset
-        dataset = get_cached_dataset("test_set.pkl")
-        return dataset
-
-    testing_set = load_test_set()
+    testing_set = get_cached_dataset("test_set.pkl")
     #testing_set = testing_set[0:100]
     custom_dataset = SegmentationDataset(testing_set)
     dataloader = torch.utils.data.DataLoader(custom_dataset, batch_size=8, shuffle=False)
@@ -158,7 +160,6 @@ Saving and loading model weights
 def save_weights(model) -> None:
     weights_path = os.path.join(WEIGHTS_PATH, model.name + ".pth")
     torch.save(model.state_dict(), weights_path)
-    print(f"Model weights saved to {weights_path}")
 
 # load weights onto a given model
 def load_weights(model: torch.nn.Module) -> torch.nn.Module:
@@ -283,10 +284,17 @@ def main():
 if __name__ == "__main__":
     main()
 
-    # get a random image and mask from the training set
-    training_set = get_cached_dataset("training_set.pkl")
-    random_index = np.random.randint(0, len(training_set))
-    image, mask = training_set[random_index]
 
-    print(np.unique(mask)) # print the unique values in the mask
-    display_img(mask)
+    # get a random image and mask from the training set
+    # training_set = get_cached_dataset("training_set.pkl")
+    # random_index = np.random.randint(0, len(training_set))
+    # image, mask = training_set[random_index]
+    #
+    # print(np.unique(mask)) # print the unique values in the mask
+    # display_img(mask)
+
+    # get an image and a mask from the dataloader
+    # dataset = get_cached_dataset("aug_training_set.pkl")
+    # image, mask = dataset[0]
+    # print(image.shape)
+    # print(mask.shape)

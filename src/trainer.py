@@ -1,47 +1,69 @@
 from torch import optim
 from torch import nn
-from torch.utils.data import DataLoader
-import tqdm
-from utils import  save_weights, load_weights, get_training_dataloader
+import torch
+from tqdm import tqdm
+from utils import  save_weights, load_weights, get_training_dataloader, get_validation_dataloader
 
 """
 Generic training function
 """
 def train_model(model, criterion, optimizer, num_epochs=10):
+    training_dataloader = get_training_dataloader()
+    validation_dataloader = get_validation_dataloader()
 
-    dataloader = get_training_dataloader()
+    minimum_loss = float('inf')
 
     print(f"Training {model.name}...")
     for epoch in range(num_epochs):
-        running_loss = 0.0
-        pbar = tqdm.tqdm(dataloader, desc=f"Epoch {epoch + 1}/{num_epochs}", leave=False)
-
-        for inputs, targets in pbar:
-            optimizer.zero_grad()
-            outputs = model(inputs)
-
-            # For autoencoder, we use the inputs as targets.
+        # --- Training Phase ---
+        model.train()  # set model to training mode once per epoch
+        for inputs, targets in training_dataloader:
+            # For autoencoders, targets are the same as inputs
             if model.type == "autoencoder":
                 targets = inputs
 
+            if targets.dim() == 4 and targets.size(1) == 1:
+                targets = targets.squeeze(1).long()
+
+            optimizer.zero_grad()
+            outputs = model(inputs)
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-            running_loss += loss.item() * inputs.size(0)
 
-            # Update the progress bar with the current loss.
-            pbar.set_postfix(loss=loss.item())
+        # --- Validation Phase ---
+        model.eval()  # set model to evaluation mode once per epoch
+        val_loss_total = 0.0
+        num_batches = 0
 
-        epoch_loss = running_loss / len(dataloader)
-        print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}")
+        # Disable gradient computation during validation
+        with torch.no_grad():
+            for inputs, targets in tqdm(validation_dataloader, desc=f"Epoch {epoch+1}/{num_epochs}", leave=False):
+                # For autoencoders, targets are the same as inputs
+                if model.type == "autoencoder":
+                    targets = inputs
 
-    # Save the model's state dictionary after training.
-    save_weights(model)
+                if targets.dim() == 4 and targets.size(1) == 1:
+                    targets = targets.squeeze(1).long()
+
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+                val_loss_total += loss.item()
+                num_batches += 1
+
+        avg_val_loss = val_loss_total / num_batches
+
+        print(f"Epoch {epoch+1}/{num_epochs} - Validation Loss: {avg_val_loss:.4f}")
+
+        # Save the model if validation loss improved
+        if avg_val_loss < minimum_loss:
+            minimum_loss = avg_val_loss
+            save_weights(model)
+
 
 """
 Specific functions for Autoencoders
 """
-
 def train_autoencoder():
     from models.autoencoder import Autoencoder
     autoencoder_model = Autoencoder()
@@ -77,6 +99,6 @@ def train_clip_autoencoder_segmentation():
     pass
 
 if __name__ == "__main__":
-    #train_autoencoder()
-    train_unet()
+    train_autoencoder()
+    #train_unet()
     #train_autoencoder_segmentation()
