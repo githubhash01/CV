@@ -9,7 +9,10 @@ import torchvision.transforms as transforms
 import torch
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-DATASET_PATH = "/Users/hashim/Desktop/Segmentation/Dataset"
+# get the parent directory of the current file
+FILE_PATH = os.path.dirname(os.path.abspath(__file__))
+PARENT_PATH = os.path.dirname(FILE_PATH)
+DATASET_PATH = os.path.join(PARENT_PATH, "Dataset")
 CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cached_dataset")
 TEST_PATH = os.path.join(DATASET_PATH, "Test")
 TRAIN_PATH = os.path.join(DATASET_PATH, "TrainVal")
@@ -266,3 +269,9 @@ def display_mask_predicted(predicted: torch.Tensor | np.ndarray, mask_gt: torch.
 
     # now display the two images
     display_img_img(mask, predicted_mask)
+
+def main():
+    cache_datasets()
+
+if __name__ == "__main__":
+    main()
