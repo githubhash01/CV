@@ -18,6 +18,9 @@ TRAIN_PATH = os.path.join(DATASET_PATH, "TrainVal")
 WEIGHTS_PATH = os.path.join(FILE_PATH, "weights")
 INFERENCE_PATH = os.path.join(FILE_PATH, "inference_results")
 
+AUG_DATASET_PATH = os.path.join(os.path.dirname(FILE_PATH), "augmented_data")
+AUG_CACHE_PATH = os.path.join(FILE_PATH, "augmented_cached_dataset")
+
 """
 Loading and caching datasets from the original dataset directory
 """
@@ -44,6 +47,8 @@ def build_dataset(dataset_path: str) -> List[Tuple[np.ndarray, np.ndarray]]:
 
 # Caches training and testing datasets in the cache directory
 def cache_datasets() -> None:
+    # Ensure the cache directory exists
+    os.makedirs(CACHE_PATH, exist_ok=True)
 
     # Caches a dataset in the cache directory
     def cache_dataset(dataset, filename):
@@ -54,10 +59,12 @@ def cache_datasets() -> None:
 
     # Build the datasets for training and testing
     training_set = build_dataset(TRAIN_PATH)
+    aug_training_set = build_dataset(AUG_DATASET_PATH)
     testing_set = build_dataset(TEST_PATH)
 
     # Cache the datasets
     cache_dataset(training_set, "training_set.pkl")
+    cache_dataset(aug_training_set, "aug_training_set.pkl")
     cache_dataset(testing_set, "test_set.pkl")
 
 # Loads the dataset from a .npy file in the cache directory
