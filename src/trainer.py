@@ -58,7 +58,7 @@ Specific functions for Segmentation
 def train_unet():
     from models.UNet import UNet
     unet_model = UNet(num_classes=3)
-    train_model(unet_model, nn.CrossEntropyLoss(), optimizer=optim.Adam(unet_model.parameters(), lr=1e-3))
+    train_model(unet_model, nn.CrossEntropyLoss(ignore_index=255), optimizer=optim.Adam(unet_model.parameters(), lr=1e-3))
 
 # 2) Segmentation Model: Autoencoder
 def train_autoencoder_segmentation():
@@ -70,7 +70,7 @@ def train_autoencoder_segmentation():
     autoencoder_model = load_weights(autoencoder_model)
     segmentation_model = SegmentationModel(encoder=autoencoder_model.encoder, num_classes=3)
 
-    train_model(segmentation_model, nn.CrossEntropyLoss(), optim.Adam(segmentation_model.parameters(), lr=1e-3))
+    train_model(segmentation_model, nn.CrossEntropyLoss(ignore_index=255), optim.Adam(segmentation_model.parameters(), lr=1e-3))
 
 # 3) Segmentation Model: CLIP Autoencoder
 def train_clip_autoencoder_segmentation():
